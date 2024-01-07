@@ -1,0 +1,219 @@
+---
+title: 'Linux安装nginx-1.20.0'
+date: '2022-05-18'
+tags: ['nginx', 'Linux']
+draft: false
+summary: '一个简单的Linux安装nginx的记录，方便后续安装使用。'
+---
+
+一个linux安装nginx记录，并包括location优先级相关。
+
+## 一. 安装nginx
+
+1. nginx安装包[下载地址](http://nginx.org/en/download.html ), 或者直接通过命令行下载到服务器opt文件夹下：
+
+   ```bash
+   wget http://nginx.org/download/nginx-1.20.0.tar.gz
+   ```
+
+2. 安装依赖：
+
+   ```bash
+   yum -y install gcc zlib zlib-devel pcre-devel openssl openssl-devel
+   yum -y install perl gcc make kernel-headers kernel-devel
+   ```
+
+3. 安装：
+
+   ```bash
+   cd /opt
+   tar -zxvf nginx-1.20.0.tar.gz 
+   cd nginx-1.20.0
+   ./configure --prefix=/usr/local/nginx --with-http_stub_status_module --with-http_ssl_module --with-http_v2_module
+   make && make install
+   ```
+
+
+4. 启动：
+
+   ```bash
+   /usr/local/nginx/sbin/nginx
+   ```
+
+5. 查看进程：
+
+```bash
+ps -ef|grep nginx
+```
+
+6. 其他操作命令：
+
+   ```bash
+   验证配置文件 ： /usr/local/nginx/sbin/nginx -t
+   重新加载配置文件 ： /usr/local/nginx/sbin/nginx -s reload
+   停止服务： /usr/local/nginx/sbin/nginx -s stop
+   ```
+
+7. 日志分隔处理：这里使用Logrotate 实现日志切割
+
+```bash
+# 创建nginx用户
+#请注意要在root用户下进行
+#修改已经存在的用户使其不允许登录：
+usermod -s /sbin/nologin <username >  
+#新建用户不允许登录：  
+useradd -s /sbin/nologin <new username>
+#vim /etc/logrotate.d/nginx
+#添加以下内容
+/usr/local/nginx/logs/*log { # 需要轮询日志路径
+    create 0664 nginx root # 以指定的权限创建全新的日志文件
+    daily # 日志文件切割频率 daily: 每日，monthly: 每月，weekly: 每周，yearly: 每年
+    dateext # 使用日期作为命名格式
+    rotate 60 # 一次将存储10个归档日志，对于第11个归档，时间最久的归档将删除
+    missingok # 在日志轮询期间，任何错误将被忽略，例如：文件无法找到 之类的错误
+    notifempty # 如果文件为空，将不会对日志进行归档
+    compress # 在日志归档之后，对日志进行gzip压缩
+    sharedscripts # 表示下面 postrotate 脚本在压缩日志之后只执行一次
+    postrotate # 脚本开始
+        /bin/kill -USR1 `cat /usr/local/nginx/logs/nginx.pid 2>/dev/null` 2>/dev/null || true
+    endscript # 脚本结束
+}
+```
+
+**/etc/logrotate.d/nginx文件内容**
+```bash
+/usr/local/nginx/logs/*log {
+    create 0664 nginx root
+    daily
+    dateext
+    rotate 60
+    missingok
+    notifempty
+    compress
+    sharedscripts
+    postrotate
+        /bin/kill -USR1 `cat /usr/local/nginx/logs/nginx.pid 2>/dev/null` 2>/dev/null || true
+    endscript
+}
+```
+
+**使用debug模式测试**
+```bash
+#使用以下命令测试
+logrotate -d -f /etc/logrotate.d/nginx
+#若无err产生，则执行归档命令并查看归档文件
+logrotate -f /etc/logrotate.d/nginx
+
+```
+
+
+
+## 二. Nginx的location优先级
+
+### 在nginx配置文件中，location主要有这几种形式：
+```text
+语法：location [=|^~|~|~*|@] /uri/ { … } 
+功能: 根据URI的不同需求进行配置，可以使用字符串与正则表达式匹配。 如果要使用正则表达式，你必须指定下列前缀： 
+~* 不区分大小写。 
+~ 区分大小写。
+具体匹配形式如下：
+1.  正则匹配 location ~ /abc { }
+2.  不区分大小写的正则匹配 location ~* /abc { }
+3.  匹配路径的前缀 location ^~ /abc { } 
+4.  精确匹配 location = /abc { }
+5.  普通路径前缀匹配 location /abc { }
+
+# 优先级：
+4 > 3 > 2 > 1 > 5
+```
+具体解释：
+
+```properties
+location = / { 
+	# 精确匹配 / ，主机名后面不能带任何字符串 
+	[ path A ] 
+}
+
+location / { 
+	# 因为所有的地址都以 / 开头，所以这条规则将匹配到所有请求 
+	# 但是正则和最长字符串会优先匹配 
+	[ path B ] 
+}
+
+location /documents/ { 
+	# 匹配任何以 /documents/ 开头的地址，匹配符合以后，还要继续往下搜索 
+	# 只有后面的正则表达式没有匹配到时，这一条才会采用这一条 
+	[ path C ] 
+}
+
+location ~ /documents/Abc { 
+	# 匹配任何以 /documents/ 开头的地址，匹配符合以后，还要继续往下搜索 
+	# 只有后面的正则表达式没有匹配到时，这一条才会采用这一条 
+	[ path CC ] 
+}
+
+location ^~ /images/ { 
+	# 匹配任何以 /images/ 开头的地址，匹配符合以后，停止往下搜索正则，采用这一条。 
+	[ path D ] 
+}
+
+location ~* \.(gif|jpg|jpeg)$ { 
+	# 匹配所有以 gif,jpg或jpeg 结尾的请求 
+	# 然而，所有请求 /images/ 下的图片会被 path D 处理，因为 ^~ 到达不了这一条正则 
+	[ path E ] 
+}
+
+location /images/ { 
+	# 字符匹配到 /images/，继续往下，会发现 ^~ 存在 
+	[ path F ] 
+}
+
+location /images/abc { 
+	# 最长字符匹配到 /images/abc，继续往下，会发现 ^~ 存在 
+	# F与G的放置顺序是没有关系的 
+	[ path G ] 
+}
+
+location ~ /images/abc/ { 
+	# 只有去掉 path D 才有效：先最长匹配 path G 开头的地址，继续往下搜索，匹配到这一条正则，采用 
+	[ path H ] 
+}
+```
+
+### 测试匹配顺序
+
+**1. 以下两个匹配规则同时存在时的匹配结果：**
+
+![匹配规则](/static/images/Pasted%20image%2020220924110201.png)
+![匹配结果](Pasted%20image%2020220924110252.png)
+
+**2. 以下三个匹配规则同时存在时的匹配结果：**
+
+![](Pasted%20image%2020220924111401.png)
+![](Pasted%20image%2020220924111435.png)
+可以看出：正则匹配要大于通用匹配
+
+**3. 多个正则匹配**
+
+![](Pasted%20image%2020220924111808.png)
+![](Pasted%20image%2020220924111856.png)
+可以看出：多个正则匹配的时候，只匹配到第一个符合条件的正则；
+
+**4. 添加精准匹配**
+
+![](Pasted%20image%2020220924112141.png)
+![](Pasted%20image%2020220924112248.png)
+
+只要存在精准匹配，则优先匹配精准匹配；
+
+### 总结如下
+
+1 匹配优先级如下
+
+① = 精确匹配 
+② ^~ 优先匹配常规字符串，匹配后，不检查正则
+③ ~* 正则匹配 示例： ~*.(gif|jpg|jpeg)$ 
+④ / documents/ 匹配常规字符 documents 代表目录，可以是其他值
+⑤ / 所有location无法匹配，则显示该默认匹配
+
+以上可以都有，也可以都没有，如果都有，则按照以上优先级匹配。
