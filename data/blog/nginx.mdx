@@ -185,24 +185,24 @@ location ~ /images/abc/ {
 **1. 以下两个匹配规则同时存在时的匹配结果：**
 
 ![匹配规则](/static/images/Pasted%20image%2020220924110201.png)
-![匹配结果](Pasted%20image%2020220924110252.png)
+![匹配结果](/static/images/Pasted%20image%2020220924110252.png)
 
 **2. 以下三个匹配规则同时存在时的匹配结果：**
 
-![](Pasted%20image%2020220924111401.png)
-![](Pasted%20image%2020220924111435.png)
+![](/static/images/Pasted%20image%2020220924111401.png)
+![](/static/images/Pasted%20image%2020220924111435.png)
 可以看出：正则匹配要大于通用匹配
 
 **3. 多个正则匹配**
 
-![](Pasted%20image%2020220924111808.png)
-![](Pasted%20image%2020220924111856.png)
+![](/static/images/Pasted%20image%2020220924111808.png)
+![](/static/images/Pasted%20image%2020220924111856.png)
 可以看出：多个正则匹配的时候，只匹配到第一个符合条件的正则；
 
 **4. 添加精准匹配**
 
-![](Pasted%20image%2020220924112141.png)
-![](Pasted%20image%2020220924112248.png)
+![](/static/images/Pasted%20image%2020220924112141.png)
+![](/static/images/Pasted%20image%2020220924112248.png)
 
 只要存在精准匹配，则优先匹配精准匹配；
 
@@ -210,10 +210,10 @@ location ~ /images/abc/ {
 
 1 匹配优先级如下
 
-① = 精确匹配 
-② ^~ 优先匹配常规字符串，匹配后，不检查正则
-③ ~* 正则匹配 示例： ~*.(gif|jpg|jpeg)$ 
-④ / documents/ 匹配常规字符 documents 代表目录，可以是其他值
-⑤ / 所有location无法匹配，则显示该默认匹配
+- ① = 精确匹配 
+- ② ^~ 优先匹配常规字符串，匹配后，不检查正则
+- ③ ~* 正则匹配 示例： ~*.(gif|jpg|jpeg)$ 
+- ④ / documents/ 匹配常规字符 documents 代表目录，可以是其他值
+- ⑤ / 所有location无法匹配，则显示该默认匹配
 
 以上可以都有，也可以都没有，如果都有，则按照以上优先级匹配。
