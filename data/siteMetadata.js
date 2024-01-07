@@ -3,7 +3,7 @@ const siteMetadata = {
   title: '小王老忘的博客',
   author: '小王老忘',
   headerTitle: '小王老忘的博客',
-  description: 'A blog created with Next.js and Tailwind.css',
+  description: '一个简单记录......',
   language: 'en-us',
   theme: 'system', // system, dark or light
   siteUrl: 'https://tailwind-nextjs-starter-blog.vercel.app',
