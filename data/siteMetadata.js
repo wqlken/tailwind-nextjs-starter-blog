@@ -4,7 +4,8 @@ const siteMetadata = {
   author: '小王老忘',
   headerTitle: '小王老忘的博客',
   description: '一个简单记录......',
-  language: 'en-us',
+  // language: 'en-us',
+  language: 'zh-CN',
   theme: 'system', // system, dark or light
   siteUrl: 'https://tailwind-nextjs-starter-blog.vercel.app',
   siteRepo: 'https://github.com/timlrx/tailwind-nextjs-starter-blog',
