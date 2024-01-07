@@ -13,9 +13,9 @@ const siteMetadata = {
   mastodon: 'https://mastodon.social/@mastodonuser',
   email: 'wqlken@gmail.com',
   github: 'https://github.com',
-  twitter: 'https://twitter.com/Twitter',
-  facebook: 'https://facebook.com',
-  youtube: 'https://youtube.com',
+  // twitter: 'https://twitter.com/Twitter',
+  // facebook: 'https://facebook.com',
+  // youtube: 'https://youtube.com',
   // linkedin: 'https://www.linkedin.com',
   locale: 'en-US',
   analytics: {
